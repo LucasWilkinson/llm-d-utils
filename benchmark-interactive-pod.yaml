@@ -1,0 +1,26 @@
+# poker/values.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: benchmark-interactive
+  labels:
+    app: benchmark-interactive
+spec:
+  restartPolicy: Never
+  containers:
+    - name: benchmark-interactive
+      image: quay.io/tms/poker:0.0.8
+      imagePullPolicy: Always
+      stdin: true
+      tty: true
+      resources:
+        limits:
+          cpu: "16"
+          memory: "64Gi"
+      env:
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-secret
+              key: HF_TOKEN
+              optional: true

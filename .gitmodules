@@ -1,0 +1,3 @@
+[submodule "llm-d"]
+	path = llm-d
+	url = https://github.com/llm-d/llm-d.git
