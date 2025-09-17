@@ -13,7 +13,10 @@ Make sure the following tools are installed and available in your `PATH`:
 - [just](https://github.com/casey/just) for running the recipes in this repo
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) configured for the target cluster
 - [helm](https://helm.sh/docs/intro/install/)
+- [helmfile](https://github.com/helmfile/helmfile)
+- [helm-diff](https://github.com/databus23/helm-diff)
 - [stern](https://github.com/stern/stern) for streaming pod logs
+- [watch](https://formulae.brew.sh/formula/watch)
 - Optional: [fzf](https://github.com/junegunn/fzf) for the nicer interactive pod pickers used by several recipes
 
 ## Initial Setup
