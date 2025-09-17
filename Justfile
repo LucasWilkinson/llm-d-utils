@@ -68,10 +68,10 @@ exec-bench:
   && kubectl cp  ./run.sh {{NAMESPACE}}/benchmark-interactive:/app/run.sh \
   && {{KN}} exec -it benchmark-interactive -- /bin/bash
 
-run-bench NAME:
+run-bench name in_tokens='128' out_tokens='2048' num_prompts='16384' concurrency_levels='8192 16384 32768':
   mkdir -p ./.tmp \
   && echo $(date +%m%d%H%M) > .tmp/TIMESTAMP \
-  && echo "{{NAME}}" > .tmp/NAME \
+  && echo "{{name}}" > .tmp/NAME \
   && echo "MODEL := \"{{MODEL}}\"" > .tmp/Justfile.remote \
   && sed -e 's#__BASE_URL__#\"http://infra-wide-ep-inference-gateway-istio.{{NAMESPACE}}.svc.cluster.local\"#g' \
          -e 's#__ENDPOINT__#\"/v1/chat/completions\"#g' \
@@ -81,7 +81,12 @@ run-bench NAME:
   && kubectl cp .tmp/Justfile.remote {{NAMESPACE}}/benchmark-interactive:/app/Justfile \
   && kubectl cp  ./run.sh {{NAMESPACE}}/benchmark-interactive:/app/run.sh \
   && kubectl cp  {{EXAMPLE_DIR}}/ms-wide-ep/values.yaml {{NAMESPACE}}/benchmark-interactive:/app/values.yaml \
-  && {{KN}} exec benchmark-interactive -- bash /app/run.sh
+  && {{KN}} exec benchmark-interactive -- \
+       env INPUT_TOKENS={{in_tokens}} \
+           OUTPUT_TOKENS={{out_tokens}} \
+           NUM_PROMPTS={{num_prompts}} \
+           CONCURRENCY_LEVELS="{{concurrency_levels}}" \
+           bash /app/run.sh
 
 cp-results:
   kubectl cp benchmark-interactive:/app/results/$(cat ./.tmp/TIMESTAMP) \

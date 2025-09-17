@@ -3,6 +3,9 @@ set -euo pipefail
 
 namespace="$1"
 name="${2:-}"
+if [[ $name == name=* ]]; then
+  name="${name#name=}"
+fi
 shift 2 || true
 stern_args=()
 if (( $# > 0 )); then

@@ -12,6 +12,7 @@ benchmark MC NUM_REQUESTS INPUT_LEN OUTPUT_LEN:
     vllm bench serve \
         --base-url {{BASE_URL}} \
         --endpoint {{ENDPOINT}} \
+        --endpoint-type openai-chat \
         --model {{MODEL}} \
         --dataset-name random \
         --random-input-len {{INPUT_LEN}} \
@@ -38,6 +39,7 @@ benchmark_decode_workload NUM_REQUESTS OUTPUT_LEN:
     vllm bench serve \
         --base-url {{BASE_URL}} \
         --endpoint {{ENDPOINT}} \
+        --endpoint-type openai-chat \
         --model {{MODEL}} \
         --dataset-name random \
         --random-input-len 1 \
@@ -50,6 +52,8 @@ benchmark_decode_workload NUM_REQUESTS OUTPUT_LEN:
 benchmark_no_pd POD_IP RR NUM_REQUESTS INPUT_LEN OUTPUT_LEN:
     vllm bench serve \
         --base-url http://{{POD_IP}}:8000 \
+        --endpoint {{ENDPOINT}} \
+        --endpoint-type openai-chat \
         --model {{MODEL}} \
         --dataset-name random \
         --random-input-len {{INPUT_LEN}} \

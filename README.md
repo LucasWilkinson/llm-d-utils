@@ -110,6 +110,21 @@ Make sure the following tools are installed and available in your `PATH`:
   
   Open a `watch` loop of `kubectl get pods` for the namespace so you can monitor pod status changes in real time.
 
+### Benchmark knobs
+
+`just run-bench` accepts optional parameters so you can tune the payload:
+
+```bash
+just run-bench name=run1 in_tokens=256 out_tokens=1024 num_prompts=8192
+```
+
+- `in_tokens` (default `128`): prompt length fed to `vllm bench`.
+- `out_tokens` (default `2048`): target completion length.
+- `num_prompts` (default `16384`): total requests per concurrency level.
+- `concurrency_levels` (default `'8192 16384 32768'`): whitespace-separated list swept by the helper.
+
+These values are forwarded into the remote runner as environment variables, so you can also invoke `kubectl exec … INPUT_TOKENS=… bash /app/run.sh` manually if needed.
+
 ## Troubleshooting
 
 - If `just` reports missing environment variables, double-check your `.env` file and ensure you’re running commands from the repository root.
