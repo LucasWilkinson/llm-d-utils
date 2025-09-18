@@ -105,7 +105,7 @@ Make sure the following tools are installed and available in your `PATH`:
   
   Copy the most recent benchmark results from the `benchmark-interactive` pod to `results/<timestamp>` locally.
 
-- `just start-bench`, `just exec-bench`, `just run-bench NAME`
+- `just start-bench`, `just interact-bench`, `just run-bench NAME`
   
   Helpers for provisioning and driving the benchmark interactive pod. See `Justfile` for the full command flow.
 

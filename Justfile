@@ -2,7 +2,7 @@ set dotenv-load
 set dotenv-required
 set shell := ["bash", "-c"]
 
-USER_NAME := "lucas"
+USER_NAME := env_var_or_default("USER_NAME", `whoami`)
 NAMESPACE := USER_NAME + "-llm-d-wide-ep"
 HF_TOKEN := "$HF_TOKEN"
 GH_TOKEN := "$GH_TOKEN"
@@ -58,7 +58,7 @@ start-bench:
   {{KN}} delete pod benchmark-interactive --ignore-not-found
   {{KN}} apply -f benchmark-interactive-pod.yaml
 
-exec-bench:
+interact-bench:
   mkdir -p ./.tmp \
   && echo "MODEL := \"{{MODEL}}\"" > .tmp/Justfile.remote.tmp \
   && sed -e 's#__BASE_URL__#\"http://infra-wide-ep-inference-gateway-istio.{{NAMESPACE}}.svc.cluster.local\"#g' \
