@@ -1,2 +1,6 @@
 .env
 .tmp
+
+# Claude
+CLAUDE.md
+.claude/
