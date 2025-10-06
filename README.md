@@ -13,8 +13,6 @@ Make sure the following tools are installed and available in your `PATH`:
 - [just](https://github.com/casey/just) for running the recipes in this repo
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) configured for the target cluster
 - [helm](https://helm.sh/docs/intro/install/)
-- [helmfile](https://github.com/helmfile/helmfile)
-- [helm-diff](https://github.com/databus23/helm-diff)
 - [stern](https://github.com/stern/stern) for streaming pod logs
 - [watch](https://formulae.brew.sh/formula/watch)
 - Optional: [fzf](https://github.com/junegunn/fzf) for the nicer interactive pod pickers used by several recipes
@@ -26,14 +24,26 @@ Make sure the following tools are installed and available in your `PATH`:
    Open `Justfile` and set `USER_NAME` to your username (or desired namespace prefix). The namespace is derived from this value via `NAMESPACE := USER_NAME + "-llm-d-wide-ep"`.
 
 2. **Create a `.env` file**
-   
+
    Because the Justfile loads environment variables via `set dotenv-load`, create a `.env` file in the project root containing your secrets:
-   
+
    ```env
+   USER_NAME=your-username
    HF_TOKEN=your-huggingface-token
    GH_TOKEN=your-github-token
+   QUAY_REPO=your-quay-username
+   QUAY_ROBOT=buildbot
+   QUAY_PASSWORD=your-robot-account-token
    ```
-   
+
+   **To get quay.io credentials:**
+   - Log into quay.io (via SSO)
+   - Go to Account Settings → Robot Accounts
+   - Create a new robot account (e.g., `buildbot`)
+   - Copy the token and use it as `QUAY_PASSWORD`
+   - `QUAY_REPO` should be your quay.io username (not the robot account name)
+   - The full robot account name will be constructed as `QUAY_REPO+QUAY_ROBOT`
+
    These values are required for the secret creation step below.
 
 3. **Point kubectl at your token file**
@@ -45,14 +55,14 @@ Make sure the following tools are installed and available in your `PATH`:
    ```
 
 4. **Create Kubernetes secrets**
-   
+
    Run:
-   
+
    ```bash
    just create-secrets
    ```
-   
-   This will create (or update) the `llm-d-hf-token` and `gh-token-secret` secrets in your namespace using the values from `.env`.
+
+   This will create (or update) the `llm-d-hf-token`, `gh-token-secret`, and `registry-auth` secrets in your namespace using the values from `.env`.
 
 5. **(Optional) Set your kubectl namespace**
    
@@ -63,25 +73,23 @@ Make sure the following tools are installed and available in your `PATH`:
    ```
 
 6. **Deploy the workload**
-   
-   Launch the Helm release into your namespace:
-   
+
+   Launch the deployment using Kustomize and Helm:
+
    ```bash
    just start
    ```
-   
-   To tear it back down, run `just stop` (for Helm resources) and `just stop-bench` if you launched the benchmark pod. When you’re completely finished, stop the long-running model workloads with `just stop` so the pods vacate your namespace.
 
-   By default the deployment pulls values from `llm-d/guides/wide-ep-lws/ms-wide-ep/values.yaml`. The `decode.parallelism.data` field (default `2`) controls how many decode workers are scheduled; update it to match the number of nodes you want to dedicate:
+   This will:
+   - Deploy model servers using `kubectl apply -k` (CoreWeave variant)
+   - Install the InferencePool via Helm (with Istio gateway)
+   - Deploy the Istio gateway and HTTPRoute
 
-   ```yaml
-   decode:
-     parallelism:
-       # This must equal the number of nodes rather than the dp_size.
-       data: 1  # change as needed
-   ```
+   To tear it back down, run `just stop`. This removes the Helm release, model server manifests, and gateway resources.
 
-   The benchmarking helpers (e.g. `just run-bench`) default to the deployment’s model (`deepseek-ai/DeepSeek-R1-0528`). If you change the model in `values.yaml`, update the `MODEL` variable near the top of the `Justfile` so the generated remote Justfile targets the right endpoint.
+   The deployment uses manifests from `llm-d/guides/wide-ep-lws/manifests/` and values from `llm-d/guides/wide-ep-lws/inferencepool.values.yaml`.
+
+   The benchmarking helpers (e.g. `just run-bench`) default to the deployment's model (`deepseek-ai/DeepSeek-R1-0528`). If you change the model, update the `MODEL` variable near the top of the `Justfile` so the generated remote Justfile targets the right endpoint.
 
 ## Everyday Commands
 
@@ -127,6 +135,46 @@ just run-bench name=run1 in_tokens=256 out_tokens=1024 num_prompts=8192
 - `concurrency_levels` (default `'8192 16384 32768'`): whitespace-separated list swept by the helper.
 
 These values are forwarded into the remote runner as environment variables, so you can also invoke `kubectl exec … INPUT_TOKENS=… bash /app/run.sh` manually if needed.
+
+## Building Custom vLLM Images
+
+To build a custom vLLM image with a specific commit:
+
+1. **Start the build pod:**
+   ```bash
+   just start-build-pod
+   ```
+
+2. **Build and push the image:**
+   ```bash
+   just build-image VLLM_COMMIT_SHA TAG
+
+   # Example:
+   just build-image 8ce5d3198d00631a76e1aa02a57947b46bc7218c mtp-enabled
+   ```
+
+   This will:
+   - Clone the llm-d repository
+   - Update the Dockerfile with your specified vLLM commit
+   - Build the image using buildah
+   - Push to `quay.io/QUAY_REPO/llm-d-cuda-dev:TAG`
+
+3. **Update the manifests:**
+
+   Edit `llm-d/guides/wide-ep-lws/manifests/modelserver/base/decode.yaml` and `prefill.yaml` to use your custom image:
+   ```yaml
+   image: quay.io/your-repo/llm-d-cuda-dev:your-tag
+   ```
+
+4. **Clean up the build pod:**
+   ```bash
+   just stop-build-pod
+   ```
+
+**Note:** The build takes 30-60+ minutes. Monitor progress with:
+```bash
+kubectl logs -f buildah-build -n your-namespace
+```
 
 ## Troubleshooting
 

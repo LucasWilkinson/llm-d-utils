@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: buildah-build
+  labels:
+    app: buildah-build
+spec:
+  containers:
+  - name: buildah
+    image: quay.io/buildah/stable
+    command: ["sleep", "infinity"]
+    securityContext:
+      privileged: true
+      runAsUser: 0
+    resources:
+      requests:
+        cpu: 8
+        memory: 32Gi
+        ephemeral-storage: 100Gi
+      limits:
+        cpu: 16
+        memory: 64Gi
+        ephemeral-storage: 200Gi
+    volumeMounts:
+    - name: container-storage
+      mountPath: /var/lib/containers
+    - name: registry-auth
+      mountPath: /root/.docker
+      readOnly: true
+  volumes:
+  - name: container-storage
+    emptyDir:
+      sizeLimit: 200Gi
+  - name: registry-auth
+    secret:
+      secretName: registry-auth
+      items:
+      - key: .dockerconfigjson
+        path: config.json
+  restartPolicy: Never

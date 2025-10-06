@@ -6,6 +6,11 @@ USER_NAME := env_var_or_default("USER_NAME", `whoami`)
 NAMESPACE := USER_NAME + "-llm-d-wide-ep"
 HF_TOKEN := "$HF_TOKEN"
 GH_TOKEN := "$GH_TOKEN"
+QUAY_REPO := env_var("QUAY_REPO")
+QUAY_ROBOT := env_var("QUAY_ROBOT")
+QUAY_PASSWORD := "$QUAY_PASSWORD"
+QUAY_USERNAME := QUAY_REPO + "+" + QUAY_ROBOT
+QUAY_REGISTRY := "quay.io/" + QUAY_REPO
 
 MODEL := "deepseek-ai/DeepSeek-R1-0528"
 
@@ -52,7 +57,30 @@ create-secrets:
     --from-literal=GH_TOKEN={{GH_TOKEN}} \
     -n {{NAMESPACE}} \
     --dry-run=client -o yaml \
+    | kubectl apply -n {{NAMESPACE}} -f - \
+  && just create-registry-auth
+
+create-registry-auth:
+  #!/usr/bin/env bash
+  echo "Creating registry auth secret..."
+  mkdir -p .tmp
+  cat > .tmp/auth.json << EOF
+  {
+    "auths": {
+      "quay.io": {
+        "auth": "$(echo -n '{{QUAY_USERNAME}}:{{QUAY_PASSWORD}}' | base64)"
+      }
+    }
+  }
+  EOF
+  kubectl create secret generic registry-auth \
+    --from-file=.dockerconfigjson=.tmp/auth.json \
+    --type=kubernetes.io/dockerconfigjson \
+    -n {{NAMESPACE}} \
+    --dry-run=client -o yaml \
     | kubectl apply -n {{NAMESPACE}} -f -
+  rm -rf .tmp/auth.json
+  echo "Registry auth secret created!"
 
 start-bench:
   {{KN}} delete pod benchmark-interactive --ignore-not-found
@@ -136,3 +164,24 @@ print-throughput DIR:
 
 print-tpot DIR:
   just print-results {{DIR}} "Median TPOT"
+
+start-build-pod:
+  {{KN}} delete pod buildah-build --ignore-not-found
+  {{KN}} apply -f buildah-build-pod.yaml
+  {{KN}} wait --for=condition=ready pod/buildah-build --timeout=120s
+
+build-image vllm_commit tag='custom' use_sccache='true':
+  {{KN}} exec buildah-build -- bash -c ' \
+    dnf install -y git make && \
+    rm -rf /tmp/llm-d && \
+    git clone https://github.com/llm-d/llm-d.git /tmp/llm-d && \
+    cd /tmp/llm-d && \
+    sed -i "s|ARG VLLM_COMMIT_SHA=.*|ARG VLLM_COMMIT_SHA=\"{{vllm_commit}}\"|" docker/Dockerfile.cuda && \
+    buildah build \
+      --build-arg USE_SCCACHE={{use_sccache}} \
+      -t {{QUAY_REGISTRY}}/llm-d-cuda-dev:{{tag}} \
+      -f docker/Dockerfile.cuda . && \
+    buildah push {{QUAY_REGISTRY}}/llm-d-cuda-dev:{{tag}}'
+
+stop-build-pod:
+  {{KN}} delete pod buildah-build --ignore-not-found
