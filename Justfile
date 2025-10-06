@@ -108,12 +108,19 @@ status:
   watch -n 2 {{KN}} get pods
 
 start:
-  cd {{EXAMPLE_DIR}} \
-  && helmfile -n {{NAMESPACE}} apply
+  kubectl apply -k {{EXAMPLE_DIR}}/manifests/modelserver/coreweave -n {{NAMESPACE}} \
+  && helm install deepseek-r1 \
+    -n {{NAMESPACE}} \
+    -f {{EXAMPLE_DIR}}/inferencepool.values.yaml \
+    --set "provider.name=istio" \
+    --set "inferenceExtension.monitoring.prometheus.enable=true" \
+    oci://us-central1-docker.pkg.dev/k8s-staging-images/gateway-api-inference-extension/charts/inferencepool --version v1.0.1 \
+  && kubectl apply -k {{EXAMPLE_DIR}}/manifests/gateway/istio -n {{NAMESPACE}}
 
 stop:
-  cd {{EXAMPLE_DIR}} \
-  && helmfile -n {{NAMESPACE}} destroy
+  helm uninstall deepseek-r1 -n {{NAMESPACE}} \
+  && kubectl delete -k {{EXAMPLE_DIR}}/manifests/modelserver/coreweave -n {{NAMESPACE}} \
+  && kubectl delete -k {{EXAMPLE_DIR}}/manifests/gateway/istio -n {{NAMESPACE}}
 
 restart:
   just stop && just start
