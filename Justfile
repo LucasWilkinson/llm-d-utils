@@ -170,13 +170,17 @@ start-build-pod:
   {{KN}} apply -f buildah-build-pod.yaml
   {{KN}} wait --for=condition=ready pod/buildah-build --timeout=120s
 
-build-image vllm_commit tag='custom' use_sccache='true':
+build-image vllm_commit tag='custom' use_sccache='false':
   {{KN}} exec buildah-build -- bash -c ' \
     dnf install -y git make && \
     rm -rf /tmp/llm-d && \
     git clone https://github.com/llm-d/llm-d.git /tmp/llm-d && \
     cd /tmp/llm-d && \
     sed -i "s|ARG VLLM_COMMIT_SHA=.*|ARG VLLM_COMMIT_SHA=\"{{vllm_commit}}\"|" docker/Dockerfile.cuda && \
+    if [ "{{use_sccache}}" = "false" ]; then \
+      sed -i "s|CC=\"sccache gcc\"|CC=\"gcc\"|g" docker/Dockerfile.cuda && \
+      sed -i "s|CXX=\"sccache g++\"|CXX=\"g++\"|g" docker/Dockerfile.cuda; \
+    fi && \
     buildah build \
       --build-arg USE_SCCACHE={{use_sccache}} \
       -t {{QUAY_REGISTRY}}/llm-d-cuda-dev:{{tag}} \
