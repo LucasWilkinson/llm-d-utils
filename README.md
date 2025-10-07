@@ -98,33 +98,115 @@ Make sure the following tools are installed and available in your `PATH`:
 
 ## Everyday Commands
 
-- `just describe [name=pod-name]`
-  
-  Describe a pod in the configured namespace. If `name` is omitted, you’ll be presented with an interactive picker listing the pod’s `NAME`, `READY`, `STATUS`, `RESTARTS`, and `AGE` columns. Requires `fzf` for the fuzzy picker, otherwise falls back to a shell `select` prompt.
+### Deployment Commands
 
-- `just stern [name=pod-name] [-- <stern flags>]`
-  
-  Stream logs from a pod using stern. With no `name` provided, you get the same interactive picker as `just describe`. Any flags after `--` are forwarded directly to stern (e.g. `just stern -- -c vllm-worker-decode`).
+- `just start`
+
+  Deploy the full stack (model servers, InferencePool, gateway) using Kustomize and Helm.
+
+- `just stop`
+
+  Tear down the deployment (removes Helm release, model server manifests, and gateway).
+
+- `just restart`
+
+  Stop and start the deployment (`just stop && just start`).
+
+- `just update-image TAG`
+
+  Update the decode.yaml and prefill.yaml manifests to use a custom image with the specified tag. Example: `just update-image test-latest-main`
+
+### Monitoring Commands
 
 - `just get-pods`
-  
-  Shortcut for `kubectl get pods` in the configured namespace.
 
-- `just set-namespace`
-  
-  Update your current kubectl context to default to `{{NAMESPACE}}`.
-
-- `just cp-results`
-  
-  Copy the most recent benchmark results from the `benchmark-interactive` pod to `results/<timestamp>` locally.
-
-- `just start-bench`, `just interact-bench`, `just run-bench NAME`
-  
-  Helpers for provisioning and driving the benchmark interactive pod. See `Justfile` for the full command flow.
+  List all pods in the configured namespace.
 
 - `just status`
-  
-  Open a `watch` loop of `kubectl get pods` for the namespace so you can monitor pod status changes in real time.
+
+  Watch pod status in real-time using `watch -n 2 kubectl get pods`.
+
+- `just describe [name=pod-name]`
+
+  Describe a pod. If `name` is omitted, you'll get an interactive picker. Requires `fzf` for fuzzy selection, otherwise falls back to shell `select`.
+
+- `just stern [name=pod-name] [-- <stern flags>]`
+
+  Stream logs from pods using stern. With no `name`, you get the interactive picker. Flags after `--` are forwarded to stern (e.g., `just stern -- -c vllm-worker`).
+
+- `just print-gpus`
+
+  Show GPU allocation across all cluster nodes, grouped by node and namespace.
+
+- `just cks-nodes`
+
+  Display CoreWeave node information (type, link speed, IB speed, reliability, etc.).
+
+### Benchmark Commands
+
+- `just start-bench`
+
+  Create the benchmark-interactive pod for running benchmarks.
+
+- `just stop-bench`
+
+  Delete the benchmark-interactive pod.
+
+- `just restart-bench`
+
+  Stop and start the benchmark pod (`just stop-bench && just start-bench`).
+
+- `just interact-bench`
+
+  Open an interactive shell in the benchmark pod with the Justfile and scripts copied in.
+
+- `just run-bench NAME [in_tokens] [out_tokens] [num_prompts] [concurrency_levels]`
+
+  Run a benchmark with the specified name and parameters. See "Benchmark knobs" below for details.
+
+- `just cp-results`
+
+  Copy the most recent benchmark results from the benchmark pod to `results/<timestamp>` locally.
+
+### Build Commands
+
+- `just start-build-pod`
+
+  Create the buildah build pod for building custom vLLM images.
+
+- `just stop-build-pod`
+
+  Delete the buildah build pod.
+
+- `just build-image VLLM_COMMIT TAG [use_sccache]`
+
+  Build a custom vLLM image with the specified commit SHA and tag. `use_sccache` defaults to `true`. Example: `just build-image abc123def my-custom-tag false`
+
+### Utility Commands
+
+- `just set-namespace`
+
+  Update your kubectl context to default to the configured namespace.
+
+- `just create-secrets`
+
+  Create or update Kubernetes secrets (HF token, GH token, registry auth) from `.env` file.
+
+- `just create-registry-auth`
+
+  Create or update only the registry authentication secret.
+
+- `just print-results DIR STR`
+
+  Grep for a string in benchmark result logs and print sorted results.
+
+- `just print-throughput DIR`
+
+  Print output token throughput from benchmark results in a directory.
+
+- `just print-tpot DIR`
+
+  Print median time-per-output-token (TPOT) from benchmark results in a directory.
 
 ### Benchmark knobs
 
