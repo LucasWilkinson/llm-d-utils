@@ -148,6 +148,38 @@ start:
     oci://us-central1-docker.pkg.dev/k8s-staging-images/gateway-api-inference-extension/charts/inferencepool --version v1.0.1 \
   && kubectl apply -k {{EXAMPLE_DIR}}/manifests/gateway/istio -n {{NAMESPACE}}
 
+wait-ready timeout='600s':
+  #!/usr/bin/env bash
+  echo "⏳ Waiting for pods to be ready (timeout: {{timeout}})..."
+  kubectl wait --for=condition=ready pod \
+    -l llm-d.ai/role=prefill \
+    -n {{NAMESPACE}} \
+    --timeout={{timeout}} && \
+  kubectl wait --for=condition=ready pod \
+    -l llm-d.ai/role=decode \
+    -n {{NAMESPACE}} \
+    --timeout={{timeout}}
+
+  if [ $? -eq 0 ]; then
+    echo "✅ All model server pods are ready!"
+    {{KN}} get pods
+    # Send notification with sound (cross-platform)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      osascript -e 'display notification "All model server pods are ready!" with title "llm-d-utils" sound name "Glass"' 2>/dev/null
+      afplay /System/Library/Sounds/Glass.aiff 2>/dev/null &
+    elif command -v notify-send &> /dev/null; then
+      notify-send "llm-d-utils" "All model server pods are ready!" 2>/dev/null &
+    fi
+  else
+    echo "⚠️  Timeout waiting for pods"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      osascript -e 'display notification "Timeout waiting for pods" with title "llm-d-utils" sound name "Basso"' 2>/dev/null
+      afplay /System/Library/Sounds/Basso.aiff 2>/dev/null &
+    elif command -v notify-send &> /dev/null; then
+      notify-send "llm-d-utils" "Timeout waiting for pods" -u critical 2>/dev/null &
+    fi
+  fi
+
 stop:
   helm uninstall deepseek-r1 -n {{NAMESPACE}} \
   && kubectl delete -k {{EXAMPLE_DIR}}/manifests/modelserver/coreweave -n {{NAMESPACE}} \
