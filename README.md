@@ -19,13 +19,9 @@ Make sure the following tools are installed and available in your `PATH`:
 
 ## Initial Setup
 
-1. **Configure your namespace name**
-   
-   Open `Justfile` and set `USER_NAME` to your username (or desired namespace prefix). The namespace is derived from this value via `NAMESPACE := USER_NAME + "-llm-d-wide-ep"`.
+1. **Create a `.env` file**
 
-2. **Create a `.env` file**
-
-   Because the Justfile loads environment variables via `set dotenv-load`, create a `.env` file in the project root containing your secrets:
+   The Justfile loads environment variables via `set dotenv-load`. Create a `.env` file in the project root with your configuration and secrets:
 
    ```env
    USER_NAME=your-username
@@ -35,6 +31,8 @@ Make sure the following tools are installed and available in your `PATH`:
    QUAY_ROBOT=buildbot
    QUAY_PASSWORD=your-robot-account-token
    ```
+
+   - `USER_NAME` is used to generate your namespace: `USER_NAME + "-llm-d-wide-ep"` (defaults to your system username if not set)
 
    **To get quay.io credentials:**
    - Log into quay.io (via SSO)
@@ -51,7 +49,7 @@ Make sure the following tools are installed and available in your `PATH`:
 
    These values are required for the secret creation step below.
 
-3. **Point kubectl at your token file**
+2. **Point kubectl at your token file**
    
    Export the kubeconfig path you received from the platform (example path shown below):
    
@@ -59,7 +57,7 @@ Make sure the following tools are installed and available in your `PATH`:
    export KUBECONFIG=~/kubectl-token.txt
    ```
 
-4. **Create Kubernetes secrets**
+3. **Create Kubernetes secrets**
 
    Run:
 
@@ -69,7 +67,7 @@ Make sure the following tools are installed and available in your `PATH`:
 
    This will create (or update) the `llm-d-hf-token`, `gh-token-secret`, and `registry-auth` secrets in your namespace using the values from `.env`.
 
-5. **(Optional) Set your kubectl namespace**
+4. **(Optional) Set your kubectl namespace**
    
    To avoid specifying `-n {{NAMESPACE}}` manually, update your context with:
    
@@ -77,7 +75,7 @@ Make sure the following tools are installed and available in your `PATH`:
    just set-namespace
    ```
 
-6. **Deploy the workload**
+5. **Deploy the workload**
 
    Launch the deployment using Kustomize and Helm:
 
