@@ -87,6 +87,9 @@ start-bench:
   {{KN}} delete pod benchmark-interactive --ignore-not-found
   {{KN}} apply -f benchmark-interactive-pod.yaml
 
+stop-bench:
+  {{KN}} delete pod benchmark-interactive --ignore-not-found
+
 interact-bench:
   mkdir -p ./.tmp \
   && echo "MODEL := \"{{MODEL}}\"" > .tmp/Justfile.remote.tmp \
@@ -190,3 +193,13 @@ build-image vllm_commit tag='custom' use_sccache='false':
 
 stop-build-pod:
   {{KN}} delete pod buildah-build --ignore-not-found
+
+update-image tag:
+  #!/usr/bin/env bash
+  IMAGE="{{QUAY_REGISTRY}}/llm-d-cuda-dev:{{tag}}"
+  echo "Updating manifests to use image: $IMAGE"
+  sed -i.bak "s|image: .*llm-d-cuda-dev.*|image: $IMAGE|" {{EXAMPLE_DIR}}/manifests/modelserver/base/decode.yaml
+  sed -i.bak "s|image: .*llm-d-cuda-dev.*|image: $IMAGE|" {{EXAMPLE_DIR}}/manifests/modelserver/base/prefill.yaml
+  rm -f {{EXAMPLE_DIR}}/manifests/modelserver/base/*.bak
+  echo "Updated decode.yaml and prefill.yaml"
+  echo "Run 'just restart' to deploy with the new image"
