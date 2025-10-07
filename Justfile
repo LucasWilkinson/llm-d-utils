@@ -58,7 +58,8 @@ create-secrets:
     -n {{NAMESPACE}} \
     --dry-run=client -o yaml \
     | kubectl apply -n {{NAMESPACE}} -f - \
-  && just create-registry-auth
+  && just create-registry-auth \
+  && just patch-image-pull-secrets
 
 create-registry-auth:
   #!/usr/bin/env bash
@@ -82,6 +83,25 @@ create-registry-auth:
     | kubectl apply -n {{NAMESPACE}} -f -
   rm -rf .tmp/auth.json
   echo "Registry auth secret created!"
+
+patch-image-pull-secrets:
+  #!/usr/bin/env bash
+  echo "Patching manifests with imagePullSecrets..."
+  # Add imagePullSecrets to decode.yaml if not present
+  if ! grep -q "imagePullSecrets:" {{EXAMPLE_DIR}}/manifests/modelserver/base/decode.yaml; then
+    sed -i.bak '/serviceAccountName: deepseek-r1/a\
+        imagePullSecrets:\
+        - name: registry-auth' {{EXAMPLE_DIR}}/manifests/modelserver/base/decode.yaml
+    rm -f {{EXAMPLE_DIR}}/manifests/modelserver/base/decode.yaml.bak
+  fi
+  # Add imagePullSecrets to prefill.yaml if not present
+  if ! grep -q "imagePullSecrets:" {{EXAMPLE_DIR}}/manifests/modelserver/base/prefill.yaml; then
+    sed -i.bak '/serviceAccountName: deepseek-r1/a\
+        imagePullSecrets:\
+        - name: registry-auth' {{EXAMPLE_DIR}}/manifests/modelserver/base/prefill.yaml
+    rm -f {{EXAMPLE_DIR}}/manifests/modelserver/base/prefill.yaml.bak
+  fi
+  echo "Manifests patched with imagePullSecrets!"
 
 start-bench:
   {{KN}} apply -f benchmark-interactive-pod.yaml
