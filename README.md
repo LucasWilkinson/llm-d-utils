@@ -6,6 +6,20 @@ Utilities and workflow helpers for managing LLM-D deployments in Kubernetes. Clo
 git clone --recursive https://github.com/LucasWilkinson/llm-d-utils
 ```
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [Initial Setup](#initial-setup)
+- [Everyday Commands](#everyday-commands)
+  - [Deployment Commands](#deployment-commands)
+  - [Monitoring Commands](#monitoring-commands)
+  - [Benchmark Commands](#benchmark-commands)
+  - [Build Commands](#build-commands)
+  - [Utility Commands](#utility-commands)
+- [Benchmark Configuration](#benchmark-configuration)
+- [Building Custom vLLM Images](#building-custom-vllm-images)
+- [Troubleshooting](#troubleshooting)
+
 ## Prerequisites
 
 Make sure the following tools are installed and available in your `PATH`:
@@ -206,7 +220,7 @@ Make sure the following tools are installed and available in your `PATH`:
 
   Print median time-per-output-token (TPOT) from benchmark results in a directory.
 
-### Benchmark knobs
+## Benchmark Configuration
 
 `just run-bench` accepts optional parameters so you can tune the payload:
 
