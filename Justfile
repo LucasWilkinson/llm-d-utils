@@ -84,7 +84,6 @@ create-registry-auth:
   echo "Registry auth secret created!"
 
 start-bench:
-  {{KN}} delete pod benchmark-interactive --ignore-not-found
   {{KN}} apply -f benchmark-interactive-pod.yaml
 
 stop-bench:
@@ -156,6 +155,9 @@ stop:
 
 restart:
   just stop && just start
+
+restart-bench:
+  just stop-bench && just start-bench
 
 print-results DIR STR:
   grep "{{STR}}" {{DIR}}/*.log \
