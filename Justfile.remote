@@ -3,7 +3,11 @@ ENDPOINT := __ENDPOINT__
 
 # Use this Justfile within the cluster.
 
+install-deps:
+    pip install lm-eval --quiet
+
 eval:
+    @just install-deps >/dev/null 2>&1 || true
     lm_eval --model local-completions --tasks gsm8k \
     --model_args model={{MODEL}},base_url={{BASE_URL}}/v1/completions,num_concurrent=50,max_retries=3,tokenized_requests=False \
     --limit 100

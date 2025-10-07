@@ -131,7 +131,7 @@ run-bench name in_tokens='128' out_tokens='2048' num_prompts='16384' concurrency
   && kubectl cp .tmp/NAME {{NAMESPACE}}/benchmark-interactive:/app/NAME \
   && kubectl cp .tmp/Justfile.remote {{NAMESPACE}}/benchmark-interactive:/app/Justfile \
   && kubectl cp  ./run.sh {{NAMESPACE}}/benchmark-interactive:/app/run.sh \
-  && kubectl cp  {{EXAMPLE_DIR}}/ms-wide-ep/values.yaml {{NAMESPACE}}/benchmark-interactive:/app/values.yaml \
+  && kubectl cp  {{EXAMPLE_DIR}}/inferencepool.values.yaml {{NAMESPACE}}/benchmark-interactive:/app/values.yaml \
   && {{KN}} exec benchmark-interactive -- \
        env INPUT_TOKENS={{in_tokens}} \
            OUTPUT_TOKENS={{out_tokens}} \

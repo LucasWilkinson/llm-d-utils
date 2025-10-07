@@ -172,9 +172,9 @@ Make sure the following tools are installed and available in your `PATH`:
 
   Open an interactive shell in the benchmark pod with the Justfile and scripts copied in.
 
-- `just run-bench NAME [in_tokens] [out_tokens] [num_prompts] [concurrency_levels]`
+- `just run-bench NAME [IN_TOKENS] [OUT_TOKENS] [NUM_PROMPTS] [CONCURRENCY_LEVELS]`
 
-  Run a benchmark with the specified name and parameters. See "Benchmark knobs" below for details.
+  Run a benchmark with the specified name and parameters. Parameters are positional. Example: `just run-bench run1 256 1024 8192`. See "Benchmark Configuration" below for details.
 
 - `just cp-results`
 
@@ -222,18 +222,33 @@ Make sure the following tools are installed and available in your `PATH`:
 
 ## Benchmark Configuration
 
-`just run-bench` accepts optional parameters so you can tune the payload:
+`just run-bench` accepts parameters to tune the benchmark payload. Parameters can be passed either positionally or as named arguments:
 
+**Positional (recommended):**
+```bash
+just run-bench run1 256 1024 8192
+```
+
+**Named arguments:**
 ```bash
 just run-bench name=run1 in_tokens=256 out_tokens=1024 num_prompts=8192
 ```
 
-- `in_tokens` (default `128`): prompt length fed to `vllm bench`.
-- `out_tokens` (default `2048`): target completion length.
-- `num_prompts` (default `16384`): total requests per concurrency level.
-- `concurrency_levels` (default `'8192 16384 32768'`): whitespace-separated list swept by the helper.
+### Parameters
 
-These values are forwarded into the remote runner as environment variables, so you can also invoke `kubectl exec … INPUT_TOKENS=… bash /app/run.sh` manually if needed.
+- `name` (required): Benchmark run name for organizing results
+- `in_tokens` (default `128`): Prompt length fed to `vllm bench`
+- `out_tokens` (default `2048`): Target completion length
+- `num_prompts` (default `16384`): Total requests per concurrency level
+- `concurrency_levels` (default `'8192 16384 32768'`): Space-separated list of concurrency levels to sweep
+
+These values are forwarded to the benchmark pod as environment variables. You can also invoke the benchmark manually:
+
+```bash
+kubectl exec -n NAMESPACE benchmark-interactive -- \
+  env INPUT_TOKENS=256 OUTPUT_TOKENS=1024 NUM_PROMPTS=8192 \
+  bash /app/run.sh
+```
 
 ## Building Custom vLLM Images
 
