@@ -64,11 +64,12 @@ create-registry-auth:
   #!/usr/bin/env bash
   echo "Creating registry auth secret..."
   mkdir -p .tmp
+  AUTH_STRING=$(echo -n "{{QUAY_USERNAME}}:{{QUAY_PASSWORD}}" | base64)
   cat > .tmp/auth.json << EOF
   {
     "auths": {
       "quay.io": {
-        "auth": "$(echo -n '{{QUAY_USERNAME}}:{{QUAY_PASSWORD}}' | base64)"
+        "auth": "${AUTH_STRING}"
       }
     }
   }

@@ -44,6 +44,11 @@ Make sure the following tools are installed and available in your `PATH`:
    - `QUAY_REPO` should be your quay.io username (not the robot account name)
    - The full robot account name will be constructed as `QUAY_REPO+QUAY_ROBOT`
 
+   **IMPORTANT:** Before building, you must also:
+   - Create the repository `llm-d-cuda-dev` in quay.io (can be public or private)
+   - Go to the repository → Settings → User and Robot Permissions
+   - Add your robot account (`QUAY_REPO+QUAY_ROBOT`) with **Write** permission
+
    These values are required for the secret creation step below.
 
 3. **Point kubectl at your token file**
